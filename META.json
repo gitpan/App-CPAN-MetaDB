@@ -35,11 +35,10 @@
             "IO::Uncompress::Gunzip" : 0,
             "LWP::UserAgent" : 0,
             "Plack" : "0.99",
-            "Redis" : 0,
             "Test::More" : 0
          }
       }
    },
    "release_status" : "stable",
-   "version" : "0.01"
+   "version" : "0.02"
 }

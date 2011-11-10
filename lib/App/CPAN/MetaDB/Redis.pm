@@ -19,7 +19,7 @@ use Redis;
 
 =head2 new
 
-Requires you supply a hashref with the "server" key pointing to the appropriate
+Requires you supply a hash with the "server" key pointing to the appropriate
 server:port. You can also add in other keys that L<Redis>->new will accept.
 
 =cut
@@ -28,7 +28,7 @@ sub new {
     my($class, %opts) = @_;
 
     return bless {
-        db => Redis->new(server => $opts{server})
+        db => Redis->new(%opts)
     }, $class;
 
 }
