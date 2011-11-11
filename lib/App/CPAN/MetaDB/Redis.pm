@@ -2,7 +2,7 @@ package App::CPAN::MetaDB::Redis;
 
 =head1 NAME
 
-App::CPAN::MetaDB::Redis
+App::CPAN::MetaDB::Redis - Store metadata in a Redis database
 
 =head1 SYNOPSIS
 
@@ -31,6 +31,17 @@ sub new {
         db => Redis->new(%opts)
     }, $class;
 
+}
+
+=head2 auth($password)
+
+Authenticate to the server with the specified password. This needs to be called
+B<before> it is passed to the L<App::CPAN::MetaDB> constructor.
+
+=cut
+sub auth {
+	my($self, $password) = shift;
+	return $self->{db}->auth($password);
 }
 
 sub _find_package {

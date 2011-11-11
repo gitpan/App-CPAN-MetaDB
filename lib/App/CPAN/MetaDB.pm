@@ -6,11 +6,11 @@ App::CPAN::MetaDB - Provide CPAN metadata for cpanminus clients
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -291,10 +291,12 @@ See http://dev.perl.org/licenses/ for more information.
 
 __DATA__
 
-<html>
+<!DOCTYPE HTML>
+<html lang="en">
 <head>
+<meta charset="utf-8">
 <title>CPAN Meta DB</title>
-<link rel="stylesheet" href="http://miyagawa.github.com/screen.css" ?>
+<link rel="stylesheet" href="http://miyagawa.github.com/screen.css">
 <style>
 body { font-size: 1.1em }
 .info { font-size: 0.9em }
@@ -327,7 +329,9 @@ status code if the package is not found.</dd>
 </dl>
 
 <div id="footer">
-This is yet another CPAN Meta DB, created by Squeeks. Thanks, miyagawa.</a>.
+This is yet another CPAN Meta DB, created by Squeeks. Thanks, miyagawa. You can
+find its code <a href="https://github.com/squeeks/App-CPAN-MetaDB">on
+Github</a>.
 </div>
 
 </div>
