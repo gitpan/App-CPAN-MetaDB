@@ -17,6 +17,8 @@ WriteMakefile(
         'Plack'                  => 0.99,
         'IO::Uncompress::Gunzip' => 0,
         'LWP::UserAgent'         => 0,
+		'YAML'                   => 0,
+		'JSON'                   => 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'App-CPAN-MetaDB-*' },

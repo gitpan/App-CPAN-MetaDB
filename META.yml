@@ -19,7 +19,9 @@ no_index:
     - inc
 requires:
   IO::Uncompress::Gunzip: 0
+  JSON: 0
   LWP::UserAgent: 0
   Plack: 0.99
   Test::More: 0
-version: 0.02
+  YAML: 0
+version: 0.03

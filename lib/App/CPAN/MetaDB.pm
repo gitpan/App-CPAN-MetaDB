@@ -6,11 +6,11 @@ App::CPAN::MetaDB - Provide CPAN metadata for cpanminus clients
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 SYNOPSIS
 
@@ -47,9 +47,11 @@ use strict;
 use warnings;
 
 use IO::Uncompress::Gunzip 'gunzip';
+use YAML;
+use JSON qw/from_json/;
 use LWP::UserAgent;
 
-my %config;
+my %meta;
 
 my $app = sub {
     my $env = shift;
@@ -64,12 +66,20 @@ my $app = sub {
 
     } elsif($env->{PATH_INFO} =~/v([0-9\.]+)\/package\/(.*)/) {
         my ($version, $package) = $env->{PATH_INFO} =~/v([0-9\.]+)\/package\/(.*)/;
-        my $data = $config{storage}->_find_package($package);
+        my $data = $meta{storage}->_find_package($package);
         if($data) {
             $response = $data;
         } else {
-            $status   = 404;
-            $response = "";
+            $data = _fetch_metacpan(undef, $package);
+            if($data) {
+                $meta{storage}->_update_package(%{$data});
+                $response = sprintf "---\ndistfile: %s\nversion: %s\n",
+                    $data->{path},
+                    $data->{version};
+            } else {
+                $status   = 404;
+                $response = "";
+            }
         }
     } else {
         $status   = 404;
@@ -102,11 +112,9 @@ The storage engine you wish to use, along with any required arguments.
 =cut
 sub new {
     my($class, %opts) = @_;
-    %config = %opts;
-
-    return bless {
-        ua => LWP::UserAgent->new,
-    }, $class;
+    %meta = %opts;
+    $meta{ua} = LWP::UserAgent->new;
+    return bless {}, $class;
 }
 
 =head2 app
@@ -130,7 +138,7 @@ sub fetch_packages {
 
     my $decompressed;
     my @packages;
-    my $response = $self->{ua}->get($config{mirror}."/modules/02packages.details.txt.gz");
+    my $response = $meta{ua}->get($meta{mirror}."/modules/02packages.details.txt.gz");
     if ($response->is_success) {
         gunzip \$response->content => \$decompressed;
     } else {
@@ -146,12 +154,78 @@ sub fetch_packages {
     # First 9 or so lines are header information...
     foreach (10..$#packages) {
         my($name, $version, $path) = split /\s+/, $packages[$_];
-        $config{storage}->_update_package(
+        $meta{storage}->_update_package(
             name    => $name,
             version => $version,
             path    => $path
         );
     }
+
+}
+
+=head2 fetch_recent
+
+Grabs metadata from the mirror containing the changes from the past day or so.
+
+=cut
+sub fetch_recent {
+    my($self) = shift;
+
+    my $response = $meta{ua}->get($meta{mirror}."/authors/RECENT-1d.yaml");
+    if (!$response->is_success) {
+        #TODO Logging
+        return undef;
+    }
+
+    my $yaml;
+    eval { $yaml = Load($response->content); };
+
+    if(!$yaml || $@) {
+        return undef;
+    }
+
+    for my $recent(@{$yaml->{recent}}) {
+        next if($recent->{path} !~/\.tar\.gz$/);
+        $recent->{path} =~s!^id/!!;
+        my @dist = split '-', (split '/', $recent->{path})[-1];
+        $dist[-1] =~s/\.tar\.gz$//;
+        $recent->{version} = pop @dist;
+        $recent->{name}    = join '::', @dist;
+
+        $meta{storage}->_update_package(
+            name    => $recent->{name},
+            version => $recent->{version},
+            path    => $recent->{path}
+        );
+    }
+
+}
+
+sub _fetch_metacpan {
+    my($self, $dist) = @_;
+    
+    $dist=~s/::/-/g;
+    
+    my $response = $meta{ua}->get("http://api.metacpan.org/release/".$dist);
+    if (!$response->is_success) {
+        #TODO Logging
+        return undef;
+    }
+
+    my $json;
+    eval { $json = from_json($response->content); };
+    if(!$json || $@) {
+        return undef;
+    }
+
+    ($json->{path}) = $json->{download_url} =~/^.*id\/(.*)$/;
+    $json->{distribution} =~s/-/::/;
+
+    return {
+        name    => $json->{distribution},
+        version => $json->{version},
+        path    => $json->{path}
+    };
 
 }
 
